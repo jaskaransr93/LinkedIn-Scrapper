@@ -25,6 +25,7 @@ npm install
 * linkedinUtil.js - Utility functions help to scrape the data
 * userPage.js - Utility functions to scrape the user profiles
 * chart_prototype.html - Base script to show the word cloud after we push the data to it
+* concordance.js - will be used in textual anaylsis of text
 
 ## Acknowledgements
 * Bo Pelech
