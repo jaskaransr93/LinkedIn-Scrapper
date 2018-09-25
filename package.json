@@ -1,0 +1,19 @@
+{
+  "name": "linkedin_scrapper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "csv-writer": "^1.0.1",
+    "mysql": "^2.16.0",
+    "mysql2": "^1.6.1",
+    "puppeteer": "^1.8.0",
+    "sequelize": "^4.39.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
