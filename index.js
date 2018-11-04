@@ -3,7 +3,7 @@ const linkedIn = require('./linkedinUtil');
 const userPageUtil = require('./userPage');
 const Sequelize = require('sequelize');
 
-const sequelize = new Sequelize('mortgages', 'root', 'admin', {
+const sequelize = new Sequelize('injurylawyers', 'root', 'admin', {
     host: 'localhost',
     dialect: 'mysql',
     port: 3306,
@@ -60,13 +60,14 @@ const USER_PAGE_RECOMMENDATIONS_PROFILE = '.pv-recommendations-section artdeco-t
 const USER_PAGE_RECOMMENDATIONS_PROFILE_NAME = '.pv-recommendations-section artdeco-tabpanel .pv-recommendation-entity .pv-recommendation-entity__detail h3';
 const USER_PAGE_RECOMMENDATIONS_PROFILE_TEXT = '.pv-recommendations-section artdeco-tabpanel .pv-recommendation-entity .pv-recommendation-entity__text';
 const USER_PAGE_RECOMMENDATIONS_RECEIVED_TAB = '.pv-recommendations-section artdeco-tablist::nth-child(1)';
-
-const keywords = encodeURI('mortgage');
+// Mortgage Architects
+//Dominion 
+const keywords = encodeURI('personal injury');
 const searchUrl = `https://www.linkedin.com/search/results/index/?keywords=${keywords}&origin=GLOBAL_SEARCH_HEADER`;
 
 async function run() {
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         defaultViewport: {
             width: 1600,
             height: 900
@@ -76,14 +77,13 @@ async function run() {
     await linkedIn.login(page);
     await page.waitForNavigation();
     await page.goto(searchUrl);
-    await page.waitFor(2 * 1000);
-    await page.screenshot({ path: 'screenshots/github.png' });
+    await page.waitFor(10 * 1000);
 
     let numPages = await getNumPages(page);
     console.log('Numpages: ', numPages);
 
     var records = [];
-    for (let h = 30; h <= 50; h++) {
+    for (let h = 20; h <= 30; h++) {
         // bulk entering to database
         var profile_records = [];
         var website_records = [];
@@ -95,6 +95,7 @@ async function run() {
 
         let pageUrl = searchUrl + '&page=' + h;
         await page.goto(pageUrl);
+        await page.waitFor(1000 * 5);
 
         console.log('Opened Page number: ' + h);
 
@@ -102,7 +103,7 @@ async function run() {
             return document.getElementsByClassName(sel).length;
         }, LENGTH_SELECTOR_CLASS);
 
-        page.waitFor(1000 * 5);
+        await page.waitFor(1000 * 5);
 
         await linkedIn.autoScroll(page);
 
@@ -114,7 +115,7 @@ async function run() {
 
                 let username = await page.evaluate((sel) => {
                     if (!document.querySelector(sel)) return '';
-                    return document.querySelector(sel).innerHTML.trim();
+                    return document.querySelector(sel).innerText.trim().replace(/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/g, '') // replace emoticons which can't be stored in db;
                 }, usernameSelector);
 
                 if (username === 'LinkedIn Member' || username === '') continue; // skip hidden members
@@ -149,7 +150,7 @@ async function run() {
 
                 let id = href.split('/')[4];
 
-                userPage.waitFor(1000 * 10);
+                await userPage.waitFor(1000 * 10);
 
                 await linkedIn.autoScroll(userPage);
 
@@ -159,7 +160,7 @@ async function run() {
 
                 // Title
                 let title = await userPageUtil.getTitle(userPage);
-                console.log(username + ' - got title');
+                console.log(username + ' - got title - ' +  title);
 
                 // Currenlty Employed At
                 let current_emp = await userPageUtil.getCurrentEmployement(userPage);

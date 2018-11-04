@@ -1,6 +1,7 @@
 const linkedIn = require('./linkedinUtil');
 
 // Selectors
+const USER_PAGE_NAME_SELECTOR = '.pv-top-card-section__name'
 const USER_PAGE_LOCATION_SELECTOR = '.pv-top-card-section__location';
 const USER_PAGE_TITLE_SELECTOR = '.pv-top-card-section__headline';
 const USER_PAGE_CURRENT_EMP = '.pv-top-card-v2-section__links .pv-top-card-v2-section__link .pv-top-card-v2-section__company-name';
@@ -29,12 +30,16 @@ const USER_PAGE_RECOMMENDATIONS_PROFILE_TEXT = '.pv-recommendations-section artd
 const USER_PAGE_RECOMMENDATIONS_RECEIVED_TAB = '.pv-recommendations-section artdeco-tab:nth-child(1)';
 const USER_PAGE_RECOMMENDATIONS_GIVEN_TAB = '.pv-recommendations-section artdeco-tab:nth-child(2)';
 
+const getName = async (userPage) => {
+    return (await linkedIn.getElementText(userPage, USER_PAGE_NAME_SELECTOR)).replace('<!---->', '');
+};
+
 const getLocation = async (userPage) => {
     return (await linkedIn.getElementText(userPage, USER_PAGE_LOCATION_SELECTOR)).replace('<!---->', '');
 };
 
 const getTitle = async (userPage) => {
-    return await linkedIn.getElementText(userPage, USER_PAGE_TITLE_SELECTOR);
+    return (await linkedIn.getElementText(userPage, USER_PAGE_TITLE_SELECTOR));
 };
 
 const getCurrentEmployement = async (userPage) => {
@@ -46,7 +51,8 @@ const getConnections = async (userPage) => {
         var ele = document.querySelector(sel);
         if (!ele) return '';
         if (ele.innerHTML.indexOf('See connections') > -1) {
-            var conn = ele.innerHTML.subString(ele.innerHTML.indexOf('('), ele.innerHTML.indexOf(')'));
+            console.dir(ele);
+            var conn = ele.innerText.substring(ele.innerText.indexOf('('), ele.innerText.indexOf(')'));
             return conn + ' connections';
         }
         return ele.innerHTML.trim();
@@ -211,8 +217,10 @@ const getRecommendations = async (userPage) => {
             // recommendations += nameEles[i].innerHTML.trim() + 
             //                 ' (' + urlEles[i].href + ') - ' + 
             //                 recommendTextEles[i].innerHTML.trim() + '\r\n';
+            var profileName = nameEles[i].innerHTML.trim().replace(new RegExp('<br>', 'g'), '') || '';
+            profileName = profileName.replace(/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/g, ''); // replace emoticons which can't be stored in db
             recommendations.push({
-                profile_name: nameEles[i].innerHTML.trim().replace(new RegExp('<br>', 'g'), '') || '',
+                profile_name: profileName,
                 profile_url: urlEles[i].href,
                 text: recommendTextEles[i].innerHTML.trim().replace(new RegExp('<br>', 'g'), '')
             });
@@ -314,6 +322,7 @@ const removeDuplicates = (arr) => {
 };
 
 module.exports = {
+    getName: getName,
     getLocation: getLocation,
     getTitle: getTitle,
     getCurrentEmployement: getCurrentEmployement,

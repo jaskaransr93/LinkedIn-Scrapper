@@ -16,7 +16,7 @@ const getElementText = async function(page, selector) {
     return await page.evaluate((sel) => {
         var ele = document.querySelector(sel);
         if (!ele) return '';
-        return ele.innerHTML.trim();
+        return ele.innerText.trim();
     }, selector);
 };
 
@@ -53,9 +53,15 @@ const isElementVisible = async (page, sel) => {
     }, sel);
 };
 
+const sanitizeText = (text) => {
+    text = text.replace(new RegExp('<br>', 'g'), '');
+    return text.replace(/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/g, ''); // replace emoticons which can't be stored in db
+};
+
 module.exports= {
     login: login,
     getElementText: getElementText,
     autoScroll: autoScroll,
-    isElementVisible: isElementVisible
+    isElementVisible: isElementVisible,
+    sanitizeText: sanitizeText
 };
