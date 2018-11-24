@@ -1,4 +1,5 @@
 const linkedIn = require('./linkedinUtil');
+const HCCrawler = require('headless-chrome-crawler');
 
 // Selectors
 const USER_PAGE_NAME_SELECTOR = '.pv-top-card-section__name'
@@ -62,7 +63,7 @@ const getConnections = async (userPage) => {
 const openContactModal = async (userPage) => {
     // Click on the contact info button
     await userPage.click(USER_PAGE_CONTACT_LINK_SELECTOR);
-    await userPage.waitFor(1000 * 5);
+    await userPage.waitFor(1000 * 2);
 };
 
 const getLinkedinURL = async (userPage) => {
@@ -137,7 +138,7 @@ const getEmail = async (userPage) => {
 const closeContactModal = async (userPage) => {
     // close the connection modal
     await userPage.click(USER_PAGE_CONTACT_BTN_CLOSE);
-    await userPage.waitFor(1000 * 3);
+    await userPage.waitFor(1000 * 1);
 };
 
 const isMoreSkillsVisible = async (userPage) => {
@@ -265,22 +266,45 @@ const getEmailPhoneFromWebsites = async (browser, websites) => {
     let personal_emails = [];
     let company_phones = [];
     let personal_phones = [];
+    let queue = [];
     // company Websites
     for (var i = 0; i < websites.length; i++) {
         let em, ph;
         try {
-            await lookupPage.goto(websites[i].url);
+            await lookupPage.goto(websites[i].url, { timeout: 10 * 1000 });
+            await lookupPage.waitFor(1000 * 3);
+            queue.push(websites[i].url);
+            queue = await lookupPage.evaluate(() => {
+                let links = [];
+                document.querySelectorAll('a[href]')
+                    .forEach(link => {
+                        if (link.href.indexOf('tel') != 0) {
+                            links.push(link.href);
+                        }
+                    });
+                return links;
+            });
+
         }
         catch (e) {
             console.error(e);
             continue;
         }
         // await lookupPage.waitForNavigation();
-        await lookupPage.waitFor(1000 * 5);
-        em = await findEmailInPage(lookupPage);
-        company_emails =company_emails.concat(em);
-        ph = await findPhoneInPage(lookupPage);
-        company_phones = company_phones.concat(ph);
+        for (let j = 0; j < queue.length && j < 30; j++ ) {
+            try {
+                await lookupPage.goto(queue[j], { timeout:5 * 1000 });
+                await lookupPage.waitFor(1000 * 1);
+                em = await findEmailInPage(lookupPage);
+                company_emails =company_emails.concat(em);
+                ph = await findPhoneInPage(lookupPage);
+                company_phones = company_phones.concat(ph);
+            }
+            catch (e) {
+                console.error(queue[j], e);
+                continue;
+            }
+        }
     }
     // Personal Websites
     // for (var i = 0; i < websites.personal_websites.length; i++) {

@@ -1,15 +1,24 @@
 const USERNAME_SELECTOR = '#login-email';
 const PASSWORD_SELECTOR = '#login-password';
 const BUTTON_SELECTOR = '#login-submit';
+const NAV_DROPDOWN_SELECTOR = '#nav-settings__dropdown-trigger';
+const SIGN_OUT_SELECTOR = 'a[data-control-name="nav.settings_signout"]';
 const CREDS = require('./creds');
 
-const login = async function(page) {
+const login = async function(page, credentenials) {
     await page.goto('https://www.linkedin.com/');
     await page.click(USERNAME_SELECTOR);
-    await page.keyboard.type(CREDS.username);
+    await page.keyboard.type(credentenials.username);
     await page.click(PASSWORD_SELECTOR);
-    await page.keyboard.type(CREDS.password);
+    await page.keyboard.type(credentenials.password);
     await page.click(BUTTON_SELECTOR);
+};
+
+const logout = async function(page) {
+    await page.click(NAV_DROPDOWN_SELECTOR);
+    await page.waitFor(2 * 1000);
+    await page.click(SIGN_OUT_SELECTOR);
+    await page.waitFor(2 * 1000);
 };
 
 const getElementText = async function(page, selector) {
@@ -63,5 +72,6 @@ module.exports= {
     getElementText: getElementText,
     autoScroll: autoScroll,
     isElementVisible: isElementVisible,
-    sanitizeText: sanitizeText
+    sanitizeText: sanitizeText,
+    logout: logout
 };

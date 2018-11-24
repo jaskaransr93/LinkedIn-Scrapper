@@ -3,7 +3,7 @@ const linkedIn = require('./linkedinUtil');
 const userPageUtil = require('./userPage');
 const Sequelize = require('sequelize');
 
-const sequelize = new Sequelize('injurylawyers', 'root', 'admin', {
+const sequelize = new Sequelize('injurylawyers1', 'root', 'admin', {
     host: 'localhost',
     dialect: 'mysql',
     port: 3306,
@@ -60,30 +60,38 @@ const USER_PAGE_RECOMMENDATIONS_PROFILE = '.pv-recommendations-section artdeco-t
 const USER_PAGE_RECOMMENDATIONS_PROFILE_NAME = '.pv-recommendations-section artdeco-tabpanel .pv-recommendation-entity .pv-recommendation-entity__detail h3';
 const USER_PAGE_RECOMMENDATIONS_PROFILE_TEXT = '.pv-recommendations-section artdeco-tabpanel .pv-recommendation-entity .pv-recommendation-entity__text';
 const USER_PAGE_RECOMMENDATIONS_RECEIVED_TAB = '.pv-recommendations-section artdeco-tablist::nth-child(1)';
+
+
+const GOOGLE_SEARCH_BUTTON = 'input[type="submit"]';
+const GOOGLE_RESULT_ITEM = 'a[href^="https://ca.linkedin.com/in"]';
 // Mortgage Architects
 //Dominion 
-const keywords = encodeURI('personal injury');
-const searchUrl = `https://www.linkedin.com/search/results/index/?keywords=${keywords}&origin=GLOBAL_SEARCH_HEADER`;
+const keywords = 'Bogoroch & Associates LLP linkedin'.replace(' ', '+').replace('&', '%26');
+// const searchUrl = `https://www.linkedin.com/search/results/index/?keywords=${keywords}&origin=GLOBAL_SEARCH_HEADER`;
+const searchUrl = `https://www.google.ca/?q=${keywords}`;
+
 
 async function run() {
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         defaultViewport: {
             width: 1600,
             height: 900
         }
     });
     const page = await browser.newPage();
-    await linkedIn.login(page);
+    await linkedIn.login(page,CREDS[0]);
     await page.waitForNavigation();
     await page.goto(searchUrl);
-    await page.waitFor(10 * 1000);
+    await page.waitFor(5 * 1000);
+    await page.click(GOOGLE_SEARCH_BUTTON);
+    await page.waitFor(5 * 1000);
 
-    let numPages = await getNumPages(page);
-    console.log('Numpages: ', numPages);
+    let recordsURL = await getNumRecordsURL(page);
+    // console.log('Numpages: ', numPages);
 
     var records = [];
-    for (let h = 20; h <= 30; h++) {
+    // for (let h = 20; h <= 30; h++) {
         // bulk entering to database
         var profile_records = [];
         var website_records = [];
@@ -93,43 +101,40 @@ async function run() {
         var recommendation_received_records = [];
         var skill_records = [];
 
-        let pageUrl = searchUrl + '&page=' + h;
-        await page.goto(pageUrl);
-        await page.waitFor(1000 * 5);
+        // let pageUrl = searchUrl + '&page=' + h;
+        // await page.goto(pageUrl);
+        // await page.waitFor(1000 * 5);
 
-        console.log('Opened Page number: ' + h);
+        // console.log('Opened Page number: ' + h);
 
-        let listLength = await page.evaluate((sel) => {
-            return document.getElementsByClassName(sel).length;
-        }, LENGTH_SELECTOR_CLASS);
+        // let listLength = await page.evaluate((sel) => {
+        //     return document.getElementsByClassName(sel).length;
+        // }, LENGTH_SELECTOR_CLASS);
 
-        await page.waitFor(1000 * 5);
+        // await page.waitFor(1000 * 5);
+// 
+        // await linkedIn.autoScroll(page);
 
-        await linkedIn.autoScroll(page);
-
-        for (let i = 1; i <= listLength; i++) { //listLength
+        for (let i = 0; i < recordsURL.length && i < 2; i++) { //listLength
             try {
                 // change the index to the next child
-                let usernameSelector = LIST_USERNAME_SELECTOR.replace("INDEX", i);
+                // let usernameSelector = LIST_USERNAME_SELECTOR.replace("INDEX", i);
                 // let emailSelector = LIST_EMAIL_SELECTOR.replace("INDEX", i);
 
-                let username = await page.evaluate((sel) => {
-                    if (!document.querySelector(sel)) return '';
-                    return document.querySelector(sel).innerText.trim().replace(/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/g, '') // replace emoticons which can't be stored in db;
-                }, usernameSelector);
+                // let username = await page.evaluate((sel) => {
+                //     if (!document.querySelector(sel)) return '';
+                //     return document.querySelector(sel).innerText.trim().replace(/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/g, '') // replace emoticons which can't be stored in db;
+                // }, usernameSelector);
 
-                if (username === 'LinkedIn Member' || username === '') continue; // skip hidden members
+                // if (username === 'LinkedIn Member' || username === '') continue; // skip hidden members
 
-                console.log('User name: ' + username);
+                // console.log('User name: ' + username);
 
-                let linkSelector = LINK_USERNAME_SELECTOR.replace("INDEX", i);
+                // let linkSelector = LINK_USERNAME_SELECTOR.replace("INDEX", i);
 
 
-                let href = await page.evaluate((sel) => {
-                    return document.querySelector(sel).href.trim();
-                }, linkSelector);
+                let href = recordsURL[i];
 
-                console.log(username + ' - got href');
 
                 const userPage = await browser.newPage();
 
@@ -146,6 +151,8 @@ async function run() {
                         console.error('Couldn\'t reload page: ' + userPage.url());
                     }
                 }
+
+                let username = await userPageUtil.getName(userPage);
 
 
                 let id = href.split('/')[4];
@@ -384,7 +391,7 @@ async function run() {
         await Skills.bulkCreate(skill_records, {
             updateOnDuplicate: ['endorsed']
         });
-    }
+    // }
     browser.close();
 }
 
@@ -404,5 +411,19 @@ async function getNumPages(page) {
     let numPages = Math.ceil(numUsers / 10);
     return numPages;
 }
+
+async function getNumRecordsURL(page) {
+    let recordsURL = await page.evaluate((sel) => {
+        var items = document.querySelectorAll(sel);
+        var urls = [];
+        for (i = 0; i < items.length; i++) {
+            urls.push(items[i].href);
+        }
+        return urls;
+    }, GOOGLE_RESULT_ITEM);
+
+    return recordsURL;
+}
+
 
 run();
