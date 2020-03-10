@@ -4,7 +4,7 @@ const userPageUtil = require('./userPage');
 const Sequelize = require('sequelize');
 var _ = require('lodash');
 
-const sequelize = new Sequelize('injurylawyers_official', 'root', 'admin', {
+const sequelize = new Sequelize('injurylawyers_targets', 'root', 'admin', {
     host: 'localhost',
     dialect: 'mysql',
     port: 3306,
@@ -20,13 +20,14 @@ const sequelize = new Sequelize('injurylawyers_official', 'root', 'admin', {
 });
 
 // models
-const Profile = sequelize.import(__dirname + "/models/profile");
-const Websites = sequelize.import(__dirname + "/models/website");
-const PhoneNumbers = sequelize.import(__dirname + "/models/phoneNumber");
-const Emails = sequelize.import(__dirname + "/models/email");
-const Skills = sequelize.import(__dirname + "/models/skill");
-const RecommendationsGiven = sequelize.import(__dirname + "/models/recommendationsGiven");
-const RecommendationsReceived = sequelize.import(__dirname + "/models/recommendationsReceived");
+// const Profile = sequelize.import(__dirname + "/models/profile");
+// const Websites = sequelize.import(__dirname + "/models/website");
+// const PhoneNumbers = sequelize.import(__dirname + "/models/phoneNumber");
+// const Emails = sequelize.import(__dirname + "/models/email");
+// const Skills = sequelize.import(__dirname + "/models/skill");
+// const RecommendationsGiven = sequelize.import(__dirname + "/models/recommendationsGiven");
+// const RecommendationsReceived = sequelize.import(__dirname + "/models/recommendationsReceived");
+const Targets  = sequelize.import(__dirname + "/models/targets");
 
 sequelize.sync();
 
@@ -45,9 +46,8 @@ const USER_PAGE_ERROR_ACTION = '.error-action';
 //Dominion 
 const keywords = encodeURI('personal injury');
 //const searchUrl = `https://www.linkedin.com/search/results/index/?keywords=${keywords}&origin=GLOBAL_SEARCH_HEADER`;
-const searchUrl = 'https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%221065805%22%5D';
 const searchUrls = [
-    'https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%227010988%22%5D'
+    'https://www.linkedin.com/search/results/people/?facetCurrentCompany=%5B%223568437%22%5D'
 ];
 
 
@@ -60,7 +60,7 @@ async function run() {
         }
     });
     const page = await browser.newPage();
-    await linkedIn.login(page, CREDS[0]);
+    await linkedIn.login(page, CREDS[1]);
     await page.waitForNavigation();
     for (let k = 0; k < searchUrls.length; k++) {
         await page.goto(searchUrls[k]);
@@ -72,13 +72,14 @@ async function run() {
         var records = [];
         for (let h = 1; h <= numPages; h++) {
             // bulk entering to database
-            var profile_records = [];
-            var website_records = [];
-            var phonenumbers_records = [];
-            var email_records = [];
-            var recommendation_given_records = [];
-            var recommendation_received_records = [];
-            var skill_records = [];
+            // var profile_records = [];
+            // var website_records = [];
+            // var phonenumbers_records = [];
+            // var email_records = [];
+            // var recommendation_given_records = [];
+            // var recommendation_received_records = [];
+            // var skill_records = [];
+            var target_records = [];
 
             let pageUrl = searchUrls[k] + '&page=' + h;
             await page.goto(pageUrl);
@@ -143,6 +144,10 @@ async function run() {
 
                     // Location 
                     let location = await userPageUtil.getLocation(userPage);
+                    let locs = location.split(',');
+                    let city = locs[0].trim();
+                    let state = (locs.length == 3 ? locs[1] : '') || '';
+                    let country = (locs.length == 3 ? locs [2] : locs[1]) || '';
                     console.log(username + ' - got location');
 
                     // Title
@@ -209,6 +214,8 @@ async function run() {
                             });
                             companyPage.close();
                         }
+                    } else {
+                        company_website = company_website.url;
                     }
 
                     // Get twitter URL
@@ -227,49 +234,49 @@ async function run() {
                     await userPageUtil.closeContactModal(userPage);
                     console.log(username + ' - modal closed');
 
-                    let isMoreSkillsVisible = await userPageUtil.isMoreSkillsVisible(userPage);
+                    // let isMoreSkillsVisible = await userPageUtil.isMoreSkillsVisible(userPage);
 
-                    if (isMoreSkillsVisible) {
-                        // Open all the skills
-                        await userPageUtil.clickShowMoreSkills(userPage);
-                    }
+                    // if (isMoreSkillsVisible) {
+                    //     // Open all the skills
+                    //     await userPageUtil.clickShowMoreSkills(userPage);
+                    // }
 
 
 
-                    let skills = await userPageUtil.getSkills(userPage);
-                    console.log(username + ' - got skills');
+                    // let skills = await userPageUtil.getSkills(userPage);
+                    // console.log(username + ' - got skills');
 
-                    let recommendations_given = [], recommendations_received = [];
-                    let isRecommendationVisible = await userPageUtil.isRecommendationSectionVisible(userPage);
-                    if (isRecommendationVisible) {
-                        // Click on the recommendations received tab
-                        await userPageUtil.clickRecommendationReceivedTab(userPage);
+                    // let recommendations_given = [], recommendations_received = [];
+                    // let isRecommendationVisible = await userPageUtil.isRecommendationSectionVisible(userPage);
+                    // if (isRecommendationVisible) {
+                    //     // Click on the recommendations received tab
+                    //     await userPageUtil.clickRecommendationReceivedTab(userPage);
 
-                        let isMoreRecommendationVisible = await userPageUtil.isMoreRecommendationVisible(userPage);
+                    //     let isMoreRecommendationVisible = await userPageUtil.isMoreRecommendationVisible(userPage);
 
-                        if (isMoreRecommendationVisible) {
-                            // Open all the skills
-                            await userPageUtil.clickShowMoreRecommendations(userPage);
-                            console.log(username + ' - show more recommendations');
-                        }
+                    //     if (isMoreRecommendationVisible) {
+                    //         // Open all the skills
+                    //         await userPageUtil.clickShowMoreRecommendations(userPage);
+                    //         console.log(username + ' - show more recommendations');
+                    //     }
 
-                        recommendations_received = await userPageUtil.getRecommendations(userPage);
+                    //     recommendations_received = await userPageUtil.getRecommendations(userPage);
 
-                        // Click on the recommendations received tab
-                        await userPageUtil.clickRecommendationGivenTab(userPage);
+                    //     // Click on the recommendations received tab
+                    //     await userPageUtil.clickRecommendationGivenTab(userPage);
 
-                        isMoreRecommendationVisible = await userPageUtil.isMoreRecommendationVisible(userPage);
+                    //     isMoreRecommendationVisible = await userPageUtil.isMoreRecommendationVisible(userPage);
 
-                        if (isMoreRecommendationVisible) {
-                            // Open all the skills
-                            await userPageUtil.clickShowMoreRecommendations(userPage);
-                            console.log(username + ' - show more recommendations');
-                        }
+                    //     if (isMoreRecommendationVisible) {
+                    //         // Open all the skills
+                    //         await userPageUtil.clickShowMoreRecommendations(userPage);
+                    //         console.log(username + ' - show more recommendations');
+                    //     }
 
-                        recommendations_given = await userPageUtil.getRecommendations(userPage);
-                    }
+                    //     recommendations_given = await userPageUtil.getRecommendations(userPage);
+                    // }
 
-                    console.log(username + ' - got recommendations');
+                    // console.log(username + ' - got recommendations');
 
 
                     if (!email || !phone) {
@@ -283,86 +290,124 @@ async function run() {
                     await userPage.close();
 
                     console.log('Record number: ' + i);
+                    let phone1, phone2, email1, email2;
+                    // Phone numebrs
+                    if (typeof phone === 'string') {
+                        phone1 = phone || '';
+                        phone2 = '';
+                    } else if (typeof phone === 'object') {
+                        phone1 = phone[0] || '';
+                        phone2 = phone[1] || '';
+                    }
 
-                    profile_records.push({
-                        profile_id: id,
-                        name: username,
+                    // Phone numebrs
+                    if (typeof email === 'string') {
+                        email1 = email || '';
+                        email2 = '';
+                    } else if (typeof email === 'object') {
+                        email1 = email[0] || '';
+                        email2 = email[1] || '';
+                    }
+
+                    target_records.push({
+                        source_id_c: id,
+                        email1: email1,
+                        email2: email2,
+                        phone_1: phone1,
+                        phone_2: phone2,
+                        first_name: (username || '').split(' ')[0],
+                        last_name: (username || '').split(' ')[1],
                         title: title,
-                        location: location,
-                        current_employement: current_emp,
+                        account_name: current_emp,
+                        primary_address_street: '',
+                        primary_address_city: city,
+                        primary_address_state: state.trim(),
+                        primary_address_country: country.trim(),
+                        website: company_website,
                         linkedin_url: linkedInUrl,
                         twitter_url: twitterURL,
                         connections: connections
                     });
 
+                    // profile_records.push({
+                    //     profile_id: id,
+                    //     name: username,
+                    //     title: title,
+                    //     location: location,
+                    //     current_employement: current_emp,
+                    //     linkedin_url: linkedInUrl,
+                    //     twitter_url: twitterURL,
+                    //     connections: connections
+                    // });
 
-                    // insert websites
-                    for (let a = 0; a < websites.length; a++) {
-                        website_records.push({
-                            profile_id: id,
-                            url: websites[a].url,
-                            type: websites[a].type
-                        });
-                    }
 
-                    // Phone numebrs
-                    if (typeof phone === 'string') {
-                        phonenumbers_records.push({
-                            profile_id: id,
-                            phone_number: phone
-                        });
-                    } else if (typeof phone === 'object') {
-                        for (let b = 0; b < phone.length; b++) {
-                            phonenumbers_records.push({
-                                profile_id: id,
-                                phone_number: phone[b]
-                            });
-                        }
-                    }
+                    // // insert websites
+                    // for (let a = 0; a < websites.length; a++) {
+                    //     website_records.push({
+                    //         profile_id: id,
+                    //         url: websites[a].url,
+                    //         type: websites[a].type
+                    //     });
+                    // }
 
-                    // Emails
-                    if (typeof email === 'string') {
-                        email_records.push({
-                            profile_id: id,
-                            email: email
-                        });
-                    } else if (typeof email === 'object') {
-                        for (let c = 0; c < email.length; c++) {
-                            email_records.push({
-                                profile_id: id,
-                                email: email[c]
-                            });
-                        }
-                    }
+                    // // Phone numebrs
+                    // if (typeof phone === 'string') {
+                    //     phonenumbers_records.push({
+                    //         profile_id: id,
+                    //         phone_number: phone
+                    //     });
+                    // } else if (typeof phone === 'object') {
+                    //     for (let b = 0; b < phone.length; b++) {
+                    //         phonenumbers_records.push({
+                    //             profile_id: id,
+                    //             phone_number: phone[b]
+                    //         });
+                    //     }
+                    // }
 
-                    // skills
-                    for (let d = 0; d < skills.length; d++) {
-                        skill_records.push({
-                            profile_id: id,
-                            skill: skills[d].skill,
-                            endorsed: skills[d].endorsed
-                        });
-                    }
+                    // // Emails
+                    // if (typeof email === 'string') {
+                    //     email_records.push({
+                    //         profile_id: id,
+                    //         email: email
+                    //     });
+                    // } else if (typeof email === 'object') {
+                    //     for (let c = 0; c < email.length; c++) {
+                    //         email_records.push({
+                    //             profile_id: id,
+                    //             email: email[c]
+                    //         });
+                    //     }
+                    // }
 
-                    // Recommendation given
-                    for (let e = 0; e < recommendations_given.length; e++) {
-                        recommendation_given_records.push({
-                            profile_id: id,
-                            profile_name: recommendations_given[e].profile_name,
-                            profile_url: recommendations_given[e].profile_url,
-                            text: recommendations_given[e].text
-                        });
-                    }
+                    // // skills
+                    // for (let d = 0; d < skills.length; d++) {
+                    //     skill_records.push({
+                    //         profile_id: id,
+                    //         skill: skills[d].skill,
+                    //         endorsed: skills[d].endorsed
+                    //     });
+                    // }
 
-                    // Recommendation received
-                    for (let f = 0; f < recommendations_received.length; f++) {
-                        recommendation_received_records.push({
-                            profile_id: id,
-                            profile_name: recommendations_received[f].profile_name,
-                            profile_url: recommendations_received[f].profile_url,
-                            text: recommendations_received[f].text
-                        });
-                    }
+                    // // Recommendation given
+                    // for (let e = 0; e < recommendations_given.length; e++) {
+                    //     recommendation_given_records.push({
+                    //         profile_id: id,
+                    //         profile_name: recommendations_given[e].profile_name,
+                    //         profile_url: recommendations_given[e].profile_url,
+                    //         text: recommendations_given[e].text
+                    //     });
+                    // }
+
+                    // // Recommendation received
+                    // for (let f = 0; f < recommendations_received.length; f++) {
+                    //     recommendation_received_records.push({
+                    //         profile_id: id,
+                    //         profile_name: recommendations_received[f].profile_name,
+                    //         profile_url: recommendations_received[f].profile_url,
+                    //         text: recommendations_received[f].text
+                    //     });
+                    // }
                 } catch (e) {
                     console.error(e);
                     if (userPage.url().indexOf('unavailable') > -1) {
@@ -379,41 +424,62 @@ async function run() {
                 }
 
             }
-            await Profile.bulkCreate(profile_records, {
+            await Targets.bulkCreate(target_records, {
                 updateOnDuplicate: [
-                    'name',
+                    'source_id_c',
+                    'email1',
+                    'email2',
+                    'phone_1',
+                    'phone_2',
+                    'first_name',
+                    'last_name',
                     'title',
-                    'location',
-                    'current_employement',
+                    'account_name',
+                    'primary_address_street',
+                    'primary_address_city',
+                    'primary_address_state',
+                    'primary_address_country',
+                    'website',
                     'linkedin_url',
                     'twitter_url',
                     'connections'
                 ]
-            });
+            })
+            // await Profile.bulkCreate(profile_records, {
+            //     updateOnDuplicate: [
+            //         'name',
+            //         'title',
+            //         'location',
+            //         'current_employement',
+            //         'linkedin_url',
+            //         'twitter_url',
+            //         'connections'
+            //     ]
+            // });
 
-            await Websites.bulkCreate(website_records, {
-                ignoreDuplicates: true
-            });
+            // await Websites.bulkCreate(website_records, {
+            //     ignoreDuplicates: true
+            // });
 
-            await Emails.bulkCreate(email_records, {
-                ignoreDuplicates: true
-            });
+            // await Emails.bulkCreate(email_records, {
+            //     ignoreDuplicates: true
+            // });
 
-            await PhoneNumbers.bulkCreate(phonenumbers_records, {
-                ignoreDuplicates: true
-            });
+            // await PhoneNumbers.bulkCreate(phonenumbers_records, {
+            //     ignoreDuplicates: true
+            // });
 
-            await RecommendationsGiven.bulkCreate(recommendation_given_records, {
-                updateOnDuplicate: ['text']
-            });
+            // await RecommendationsGiven.bulkCreate(recommendation_given_records, {
+            //     updateOnDuplicate: ['text']
+            // });
 
-            await RecommendationsReceived.bulkCreate(recommendation_received_records, {
-                updateOnDuplicate: ['text']
-            });
+            // await RecommendationsReceived.bulkCreate(recommendation_received_records, {
+            //     updateOnDuplicate: ['text']
+            // });
 
-            await Skills.bulkCreate(skill_records, {
-                updateOnDuplicate: ['endorsed']
-            });
+            // await Skills.bulkCreate(skill_records, {
+            //     updateOnDuplicate: ['endorsed']
+            // });
         }
     }
     console.log('Closing browser');

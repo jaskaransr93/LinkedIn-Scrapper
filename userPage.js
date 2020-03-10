@@ -19,9 +19,11 @@ const USER_PAGE_CONTACT_BTN_CLOSE = 'artdeco-modal .artdeco-dismiss';
 
 const USER_PAGE_TOP_SKILL_TEXT = '.pv-skill-categories-section .pv-skill-category-entity__top-skill .pv-skill-category-entity__name span';
 const USER_PAGE_TOP_SKILL_COUNT = '.pv-skill-categories-section .pv-skill-category-entity__top-skill .pv-skill-category-entity__endorsement-count';
+const USER_PAGE_TOP = '.pv-skill-categories-section .pv-skill-category-entity__top-skill';
 const USER_PAGE_BTN_SHOW_MORE = '.pv-skill-categories-section .pv-skills-section__additional-skills';
 const USER_PAGE_SECONDARY_SKILLS_TEXT = '.pv-skill-category-entity--secondary .pv-skill-category-entity__name span';
 const USER_PAGE_SECONDARY_SKILLS_COUNT = '.pv-skill-category-entity--secondary .pv-skill-category-entity__endorsement-count';
+const USER_PAGE_SECONDARY = '.pv-skill-category-entity--secondary';
 
 const USER_PAGE_RECOMMENDATIONS_SECTION = '.pv-recommendations-section';
 const USER_PAGE_RECOMMENDATIONS_BTN_SHOW_MORE = '.pv-recommendations-section artdeco-tabpanel.active .pv-profile-section__see-more-inline';
@@ -30,6 +32,9 @@ const USER_PAGE_RECOMMENDATIONS_PROFILE_NAME = '.pv-recommendations-section artd
 const USER_PAGE_RECOMMENDATIONS_PROFILE_TEXT = '.pv-recommendations-section artdeco-tabpanel.active .pv-recommendation-entity .pv-recommendation-entity__text';
 const USER_PAGE_RECOMMENDATIONS_RECEIVED_TAB = '.pv-recommendations-section artdeco-tab:nth-child(1)';
 const USER_PAGE_RECOMMENDATIONS_GIVEN_TAB = '.pv-recommendations-section artdeco-tab:nth-child(2)';
+const emoticon_regex = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83c[\ude01\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|[\ud83c[\ude32\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|[\ud83c[\ude50\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g;
+var websites_info = {};
+
 
 const getName = async (userPage) => {
     return (await linkedIn.getElementText(userPage, USER_PAGE_NAME_SELECTOR)).replace('<!---->', '');
@@ -40,7 +45,7 @@ const getLocation = async (userPage) => {
 };
 
 const getTitle = async (userPage) => {
-    return (await linkedIn.getElementText(userPage, USER_PAGE_TITLE_SELECTOR));
+    return (await linkedIn.getElementText(userPage, USER_PAGE_TITLE_SELECTOR)).replace(/(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83c[\ude01\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|[\ud83c[\ude32\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|[\ud83c[\ude50\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g, '');
 };
 
 const getCurrentEmployement = async (userPage) => {
@@ -63,7 +68,7 @@ const getConnections = async (userPage) => {
 const openContactModal = async (userPage) => {
     // Click on the contact info button
     await userPage.click(USER_PAGE_CONTACT_LINK_SELECTOR);
-    await userPage.waitFor(1000 * 2);
+    await userPage.waitFor(1000 * 4);
 };
 
 const getLinkedinURL = async (userPage) => {
@@ -151,12 +156,14 @@ const clickShowMoreSkills = async (userPage) => {
 };
 
 const getSkills = async (userPage) => {
-    return await userPage.evaluate((topSkillTextSel, topSkillCountSel, secSkillTextSel, secSkillCountSel) => {
+    return await userPage.evaluate((topSkillTextSel, topSkillCountSel, topSkill, secSkillTextSel, secSkillCountSel, secSkill) => {
 
         var topSkillsTextEle = document.querySelectorAll(topSkillTextSel);
         var topSkillsCountEle = document.querySelectorAll(topSkillCountSel);
+        var topSkills = document.querySelectorAll(topSkill);
         var secSkillsTextEle = document.querySelectorAll(secSkillTextSel);
         var secSkillsCountEle = document.querySelectorAll(secSkillCountSel);
+        var secSkills = document.querySelectorAll(secSkill);
         // var skills = '';
         var skills = [];
         //Get the top skills
@@ -164,22 +171,24 @@ const getSkills = async (userPage) => {
             // skills[topSkillsTextEle[i].innerHTML.trim()] = topSkillsCountEle[i].innerHTML.trim()
             // skills += topSkillsTextEle[i].innerHTML.trim() + ' : ' + topSkillsCountEle[i].innerHTML.trim() + '\r\n';
             skills.push({
-                skill: topSkillsTextEle[i].innerHTML.trim(),
-                endorsed: topSkillsCountEle[i].innerHTML.trim()
+                skill: topSkills[i].querySelector('.pv-skill-category-entity__name span').innerHTML.trim(),
+                endorsed: topSkills[i].querySelector('.pv-skill-category-entity__endorsement-count') ?
+                    topSkills[i].querySelector('.pv-skill-category-entity__endorsement-count').innerHTML.trim() : '0'
             });
         }
 
         //Get the Secondary skills
-        for (var i = 0; i < secSkillsTextEle.length; i++) {
+        for (var i = 0; i < secSkills.length; i++) {
             // skills += secSkillsTextEle[i].innerHTML.trim() + ' : ' + secSkillsCountEle[i].innerHTML.trim() + '\r\n';
             skills.push({
-                skill: secSkillsTextEle[i].innerHTML.trim(),
-                endorsed: secSkillsCountEle[i].innerHTML.trim()
+                skill: secSkills[i].querySelector('.pv-skill-category-entity__name span').innerHTML.trim(),
+                endorsed: secSkills[i].querySelector('.pv-skill-category-entity__endorsement-count') ?
+                    secSkills[i].querySelector('.pv-skill-category-entity__endorsement-count').innerHTML.trim() : '0'
             });
         }
 
         return skills;
-    }, USER_PAGE_TOP_SKILL_TEXT, USER_PAGE_TOP_SKILL_COUNT, USER_PAGE_SECONDARY_SKILLS_TEXT, USER_PAGE_SECONDARY_SKILLS_COUNT);
+    }, USER_PAGE_TOP_SKILL_TEXT, USER_PAGE_TOP_SKILL_COUNT, USER_PAGE_TOP, USER_PAGE_SECONDARY_SKILLS_TEXT, USER_PAGE_SECONDARY_SKILLS_COUNT, USER_PAGE_SECONDARY);
 };
 
 const isRecommendationSectionVisible = async (userPage) => {
@@ -219,7 +228,7 @@ const getRecommendations = async (userPage) => {
             //                 ' (' + urlEles[i].href + ') - ' + 
             //                 recommendTextEles[i].innerHTML.trim() + '\r\n';
             var profileName = nameEles[i].innerHTML.trim().replace(new RegExp('<br>', 'g'), '') || '';
-            profileName = profileName.replace(/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/g, ''); // replace emoticons which can't be stored in db
+            profileName = profileName.replace(/(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83c[\ude01\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|[\ud83c[\ude32\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|[\ud83c[\ude50\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g, ''); // replace emoticons which can't be stored in db
             recommendations.push({
                 profile_name: profileName,
                 profile_url: urlEles[i].href,
@@ -252,10 +261,10 @@ const findPhoneInPage = async (page) => {
         let phones = document.querySelector('body').innerText.match(/\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})/gi);
         if (!phones) return []
         phones = phones.map((phone) => phone.replace(/\(/g, '')
-                                            .replace(/\)/g, '')
-                                            .replace(/ /g, '')
-                                            .replace(/-/g, '')
-                                            .replace(/\./g, ''));
+            .replace(/\)/g, '')
+            .replace(/ /g, '')
+            .replace(/-/g, '')
+            .replace(/\./g, ''));
         return phones;
     });
 };
@@ -270,6 +279,16 @@ const getEmailPhoneFromWebsites = async (browser, websites) => {
     // company Websites
     for (var i = 0; i < websites.length; i++) {
         let em, ph;
+        if (websites_info[websites[i].url]) {
+            company_emails = company_emails.concat(websites_info[websites[i].url].company_emails);
+            company_phones = company_phones.concat(websites_info[websites[i].url].company_phones)
+            continue;
+        } else {
+            websites_info[websites[i].url] = {
+                company_emails: [],
+                company_phones: []
+            };
+        }
         try {
             await lookupPage.goto(websites[i].url, { timeout: 10 * 1000 });
             await lookupPage.waitFor(1000 * 3);
@@ -291,14 +310,16 @@ const getEmailPhoneFromWebsites = async (browser, websites) => {
             continue;
         }
         // await lookupPage.waitForNavigation();
-        for (let j = 0; j < queue.length && j < 30; j++ ) {
+        for (let j = 0; j < queue.length && j < 30; j++) {
             try {
-                await lookupPage.goto(queue[j], { timeout:5 * 1000 });
+                await lookupPage.goto(queue[j], { timeout: 5 * 1000 });
                 await lookupPage.waitFor(1000 * 1);
                 em = await findEmailInPage(lookupPage);
-                company_emails =company_emails.concat(em);
+                company_emails = company_emails.concat(em);
+                websites_info[websites[i].url].company_emails = websites_info[websites[i].url].company_emails.concat(em);
                 ph = await findPhoneInPage(lookupPage);
                 company_phones = company_phones.concat(ph);
+                websites_info[websites[i].url].company_phones = websites_info[websites[i].url].company_phones.concat(ph);
             }
             catch (e) {
                 console.error(queue[j], e);
@@ -340,7 +361,7 @@ const getEmailPhoneFromWebsites = async (browser, websites) => {
 };
 
 const removeDuplicates = (arr) => {
-    return arr.filter(function(item, pos) {
+    return arr.filter(function (item, pos) {
         return arr.indexOf(item) == pos;
     });
 };

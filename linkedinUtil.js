@@ -67,11 +67,16 @@ const sanitizeText = (text) => {
     return text.replace(/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/g, ''); // replace emoticons which can't be stored in db
 };
 
+const getId = (href) => {
+    return href.split('/')[4];
+}
+
 module.exports= {
     login: login,
     getElementText: getElementText,
     autoScroll: autoScroll,
     isElementVisible: isElementVisible,
     sanitizeText: sanitizeText,
-    logout: logout
+    logout: logout,
+    getId: getId
 };

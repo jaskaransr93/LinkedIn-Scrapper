@@ -2,18 +2,24 @@
   "name": "linkedin_scrapper",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "dependencies": {
+    "babel-runtime": "^6.26.0",
     "csv-writer": "^1.0.1",
+    "d3": "^5.8.2",
     "headless-chrome-crawler": "^1.8.0",
+    "jsdom": "^13.2.0",
     "mysql": "^2.16.0",
     "mysql2": "^1.6.1",
     "natural": "^0.6.1",
     "pg": "^7.5.0",
     "puppeteer": "^1.8.0",
+    "redis": "^2.8.0",
     "sequelize": "^4.39.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "electron": "^3.0.10"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
