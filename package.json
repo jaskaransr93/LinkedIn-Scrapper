@@ -13,7 +13,7 @@
     "mysql2": "^1.6.1",
     "natural": "^0.6.1",
     "pg": "^7.5.0",
-    "puppeteer": "^1.8.0",
+    "puppeteer": "^1.13.0",
     "redis": "^2.8.0",
     "sequelize": "^4.39.0"
   },
